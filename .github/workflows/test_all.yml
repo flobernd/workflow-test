@@ -1,0 +1,38 @@
+name: Test All
+
+on: 
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  find_solution:
+    name: Prepare
+    uses: flobernd/workflows/.github/workflows/find_solution.yml@master
+    with:
+      directory: ./WorkflowTest
+
+  run_tests:
+    name: Test (${{ matrix.os.name }})
+    uses: flobernd/workflows/.github/workflows/dotnet_test.yml@master
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - { id: macos-latest  , name: macOS   }
+          - { id: ubuntu-latest , name: Linux   }
+          - { id: windows-latest, name: Windows }
+    needs: find_solution
+    with:
+      runs-on: ${{ matrix.os.id }}
+      dotnet_version: |
+        6.0.x
+      solution: ${{ needs.find_solution.outputs.solution }}
+      maxdop: 0
+      use_nuget_cache: true
+      nuget_cache_key: '**/packages.lock.json'
+      report-suffix: ${{ matrix.os.name }}
+      archive: always
+      artifact: test-results
