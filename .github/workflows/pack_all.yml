@@ -1,0 +1,25 @@
+name: Pack All
+
+on: 
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  find_solution:
+    name: Prepare
+    uses: flobernd/workflows/.github/workflows/dotnet-find-solution.yaml@master
+    with:
+      directory: ./WorkflowTest
+
+  build_nuget:
+    name: Build
+    uses: flobernd/workflows/.github/workflows/dotnet-pack.yaml@master
+    needs: find_solution
+    with:
+      solution: ${{ needs.find_solution.outputs.solution }}
+      use-nuget-cache: true
+      nuget-cache-key: '**/packages.lock.json'
+      artifact: nupkg

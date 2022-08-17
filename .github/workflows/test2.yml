@@ -1,0 +1,46 @@
+name: Test2
+
+on: 
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: flobernd/actions/github/hash-files@master
+        id: hash0
+        with:
+          pattern: |
+            '**/*.csproj'
+
+      - uses: flobernd/actions/github/hash-files@master
+        id: hash1
+        with:
+          pattern: |
+            README.md
+
+      - uses: flobernd/actions/github/hash-files@master
+        id: hash2
+        with:
+          pattern: |
+            '**/*.csproj'
+            README.md
+
+      - name: Print
+        env:
+          HASH0: ${{ steps.hash0.outputs.hash }}
+          HASH1: ${{ steps.hash1.outputs.hash }}
+          HASH2: ${{ steps.hash2.outputs.hash }}
+        run: |
+          echo $HASH0
+          echo $HASH1
+          echo $HASH2
+  

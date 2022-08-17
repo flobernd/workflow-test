@@ -1,0 +1,7 @@
+*               text=auto
+*.md            text encoding=utf-8
+*.sh            text eol=lf
+*.bat           text eol=crlf
+*.cs	        text encoding=utf-8
+*.csproj        text encoding=utf-8
+*.sln           text encoding=utf-8
