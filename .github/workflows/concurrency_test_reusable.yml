@@ -1,0 +1,20 @@
+name: ConcurrencyTestWorkflowReusable
+
+on:
+  workflow_call:
+    inputs:
+      id:
+        type: string
+        required: true
+
+jobs:
+  main:
+    name: ConcurrencyTestJobReusable
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print
+        shell: bash
+        run: |
+          echo "ID  = Reusable ${{ inputs.id }}"
+          echo "GRP = ${{ github.workflow }}-${{ github.ref }}"
+          sleep 10
