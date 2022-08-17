@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'" />
+
+    <OutputType>Exe</OutputType>
+    <IsPublishable>true</IsPublishable>
+    <IsPackable>false</IsPackable>
+
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WorkflowTest.Lib1\WorkflowTest.Lib1.csproj" />
+    <ProjectReference Include="..\WorkflowTest.Lib2\WorkflowTest.Lib2.csproj" />
+  </ItemGroup>
+
+</Project>
