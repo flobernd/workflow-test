@@ -1,0 +1,132 @@
+name: Composite Test
+
+on: 
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  main:
+    name: Prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: flobernd/actions/github/create-release@master
+        with:
+          tag-name: v1.2.4
+          generate-release-notes: true
+
+      - uses: flobernd/actions/github/create-tag@master
+        with:
+          name: v1.2.5
+          sha: ${{ github.sha }}
+
+      - uses: flobernd/actions/github/create-release@master
+        with:
+          tag-name: v1.2.5
+          generate-release-notes: true
+
+      - uses: ./.github/actions/test
+
+      - uses: flobernd/actions/dotnet/find-solution@master
+        id: find
+        name: Find Solution
+        with:
+          directory: ./WorkflowTest
+
+      - run: echo "${{ steps.find.outputs.solution }}"
+
+      - uses: flobernd/actions/dotnet/filter-solution@master
+        name: Filter Solution (Packages)
+        with:
+          solution: ${{ steps.find.outputs.solution }}
+          pattern: |
+            **/*Lib*.csproj
+          output: ./WorkflowTest/Packages.slnf
+
+      - uses: flobernd/actions/dotnet/filter-solution@master
+        name: Filter Solution (Programs)
+        with:
+          solution: ${{ steps.find.outputs.solution }}
+          pattern: |
+            **/*App*.csproj
+          output: ./WorkflowTest/Programs.slnf
+
+      - uses: flobernd/actions/dotnet/filter-solution@master
+        name: Filter Solution (Tests)
+        with:
+          solution: ${{ steps.find.outputs.solution }}
+          pattern: |
+            **/*.Test*.csproj
+          output: ./WorkflowTest/Tests.slnf
+
+      - uses: flobernd/actions/dotnet/restore@master
+        name: .NET Restore
+        with:
+          solution: ${{ steps.find.outputs.solution }}
+          cache-key: ${{ hashFiles('**/packages.lock.json') }}
+
+      - uses: flobernd/actions/dotnet/pack@master
+        name: .NET Pack
+        with:
+          solution: ./WorkflowTest/Packages.slnf
+
+      - uses: flobernd/actions/dotnet/publish@master
+        name: .NET Publish (directory)
+        with:
+          solution: ./WorkflowTest/Programs.slnf
+          output: ./publish_dirs
+
+      - uses: flobernd/actions/dotnet/publish@master
+        name: .NET Publish (zip)
+        with:
+          solution: ./WorkflowTest/Programs.slnf
+          output: ./publish_zips
+          output-format: zip
+
+      - run: ls -l ./publish_dirs
+      - run: ls -l ./publish_zips
+
+      - name: SonarCloud Determine Names
+        id: sonarcloud-names
+        run: |
+          REPOSITORY=${GITHUB_REPOSITORY#*/}
+          echo "::set-output name=organization::${GITHUB_REPOSITORY_OWNER}"
+          echo "::set-output name=project-key::${GITHUB_REPOSITORY_OWNER}_${REPOSITORY}"
+          echo "ORG = ${GITHUB_REPOSITORY_OWNER}"
+          echo "KEY = ${GITHUB_REPOSITORY_OWNER}_${REPOSITORY}"
+
+      - uses: flobernd/actions/sonarcloud/prepare@master
+        name: SonarCloud Prepare
+
+      - uses: flobernd/actions/sonarcloud/begin@master
+        name: SonarCloud Begin
+        with:
+          sonar-organization: ${{ steps.sonarcloud-names.outputs.organization }}
+          sonar-project-key: ${{ steps.sonarcloud-names.outputs.project-key }}
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: flobernd/actions/dotnet/build@master
+        name: .NET Build
+        with:
+          solution: ./WorkflowTest/Tests.slnf
+          configuration: Debug
+
+      - uses: flobernd/actions/dotnet/test@master
+        name: .NET Test (DoP=3)
+        with:
+          projects: '**/*.Test*.csproj'
+          log-results: true
+          collect-coverage: true
+          maxdop: 3
+
+      - uses: flobernd/actions/sonarcloud/end@master
+        name: SonarCloud End
+        with:
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
