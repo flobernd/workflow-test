@@ -1,0 +1,15 @@
+name: CI
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  main:
+    name: Approval Actions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
