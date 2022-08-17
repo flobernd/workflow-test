@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net6.0": {
+      "workflowtest.lib2": {
+        "type": "Project"
+      },
+      "workflowtest.lib3": {
+        "type": "Project",
+        "dependencies": {
+          "WorkflowTest.Lib2": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}
